@@ -1,6 +1,5 @@
 import argparse
 import sqlite3
-from email.utils import parseaddr
 
 
 def main() -> None:
@@ -22,7 +21,7 @@ def main() -> None:
     )
     args = parser.parse_args()
 
-    counts = {}
+    org_counts = {}
     with open(args.mbox_path, encoding="utf-8", errors="replace") as handle:
         for line in handle:
             if not line.startswith("From "):
@@ -30,11 +29,11 @@ def main() -> None:
             parts = line.split()
             if len(parts) < 2:
                 continue
-            email = parseaddr(parts[1])[1]
+            email = parts[1]
             if "@" not in email:
                 continue
-            org = email.split("@", 1)[1]
-            counts[org] = counts.get(org, 0) + 1
+            org = email.split("@", 1)[1].lower()
+            org_counts[org] = org_counts.get(org, 0) + 1
 
     with sqlite3.connect(args.database_path) as conn:
         cur = conn.cursor()
@@ -42,7 +41,7 @@ def main() -> None:
         cur.execute("CREATE TABLE Counts (org TEXT PRIMARY KEY, count INTEGER)")
         cur.executemany(
             "INSERT INTO Counts (org, count) VALUES (?, ?)",
-            counts.items(),
+            org_counts.items(),
         )
         conn.commit()
 
