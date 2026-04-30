@@ -49,7 +49,6 @@ def main() -> None:
                 "INSERT INTO Counts (org, count) VALUES (?, ?)",
                 org_counts.items(),
             )
-            conn.commit()
     except sqlite3.Error as exc:
         raise SystemExit(
             f"Failed to write database at {args.database_path}: {exc}"
