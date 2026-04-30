@@ -25,6 +25,7 @@
 *.log
 *.sql
 *.sqlite
+!orgcount.sqlite
 
 # OS generated files #
 ######################
