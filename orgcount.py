@@ -1,8 +1,10 @@
 import argparse
 import sqlite3
+from email.utils import parseaddr
 
 
 def main() -> None:
+    """Generate an organization count database from an mbox mailbox file."""
     parser = argparse.ArgumentParser(
         description="Count emails by organization from an mbox file."
     )
@@ -28,7 +30,7 @@ def main() -> None:
             parts = line.split()
             if len(parts) < 2:
                 continue
-            email = parts[1]
+            email = parseaddr(parts[1])[1]
             if "@" not in email:
                 continue
             org = email.split("@", 1)[1]
@@ -42,6 +44,7 @@ def main() -> None:
             "INSERT INTO Counts (org, count) VALUES (?, ?)",
             counts.items(),
         )
+        conn.commit()
 
 
 if __name__ == "__main__":
