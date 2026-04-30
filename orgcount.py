@@ -20,12 +20,7 @@ def main() -> None:
     )
     args = parser.parse_args()
 
-    conn = sqlite3.connect(args.database_path)
-    cur = conn.cursor()
-
-    cur.execute("DROP TABLE IF EXISTS Counts")
-    cur.execute("CREATE TABLE Counts (org TEXT PRIMARY KEY, count INTEGER)")
-
+    counts = {}
     with open(args.mbox_path, encoding="utf-8", errors="replace") as handle:
         for line in handle:
             if not line.startswith("From "):
@@ -37,14 +32,16 @@ def main() -> None:
             if "@" not in email:
                 continue
             org = email.split("@", 1)[1]
-            cur.execute(
-                "INSERT INTO Counts (org, count) VALUES (?, 1) "
-                "ON CONFLICT(org) DO UPDATE SET count = count + 1",
-                (org,),
-            )
+            counts[org] = counts.get(org, 0) + 1
 
-    conn.commit()
-    conn.close()
+    with sqlite3.connect(args.database_path) as conn:
+        cur = conn.cursor()
+        cur.execute("DROP TABLE IF EXISTS Counts")
+        cur.execute("CREATE TABLE Counts (org TEXT PRIMARY KEY, count INTEGER)")
+        cur.executemany(
+            "INSERT INTO Counts (org, count) VALUES (?, ?)",
+            counts.items(),
+        )
 
 
 if __name__ == "__main__":
