@@ -24,7 +24,7 @@ def main() -> None:
     cur = conn.cursor()
 
     cur.execute("DROP TABLE IF EXISTS Counts")
-    cur.execute("CREATE TABLE Counts (org TEXT, count INTEGER)")
+    cur.execute("CREATE TABLE Counts (org TEXT PRIMARY KEY, count INTEGER)")
 
     with open(args.mbox_path, encoding="utf-8", errors="replace") as handle:
         for line in handle:
@@ -37,17 +37,11 @@ def main() -> None:
             if "@" not in email:
                 continue
             org = email.split("@", 1)[1]
-            cur.execute("SELECT count FROM Counts WHERE org = ?", (org,))
-            row = cur.fetchone()
-            if row is None:
-                cur.execute(
-                    "INSERT INTO Counts (org, count) VALUES (?, 1)", (org,)
-                )
-            else:
-                cur.execute(
-                    "UPDATE Counts SET count = count + 1 WHERE org = ?",
-                    (org,),
-                )
+            cur.execute(
+                "INSERT INTO Counts (org, count) VALUES (?, 1) "
+                "ON CONFLICT(org) DO UPDATE SET count = count + 1",
+                (org,),
+            )
 
     conn.commit()
     conn.close()
