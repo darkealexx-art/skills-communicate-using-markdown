@@ -6,8 +6,6 @@ import numpy as np
 
 from data_engine import compute_biometrics, passes_biometric_filters, HISTORIAL_PROHIBIDO
 
-NUMBERS = np.arange(1, 57)
-
 
 def generate_consensus_sequences(
     model_results: Iterable[dict],
@@ -21,7 +19,10 @@ def generate_consensus_sequences(
         numbers = np.array([result[f"N{i}"] for i in range(1, 7)], dtype=int)
         counts[numbers - 1] += 1
     weights = _normalize_weights(counts)
-    top_indices = np.argsort(weights)[-20:]
+    if np.all(counts == 0):
+        top_indices = np.arange(56)
+    else:
+        top_indices = np.argsort(weights)[-20:]
     restricted_weights = _normalize_weights(weights[top_indices])
     rng = np.random.default_rng(seed)
 
