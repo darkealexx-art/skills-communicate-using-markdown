@@ -107,8 +107,6 @@ def _load_draws_from_csv(path: Path) -> list[Tuple[int, ...]]:
 
 def _row_looks_like_header(row: Sequence[str]) -> bool:
     for cell in row:
-        if cell is None:
-            continue
         cell = cell.strip()
         if not cell:
             continue
@@ -163,8 +161,6 @@ def _extract_numbers(
 
 
 def _parse_int(value: str) -> Optional[int]:
-    if value is None:
-        return None
     value = value.strip()
     if not value:
         return None
@@ -178,8 +174,6 @@ def _parse_int(value: str) -> Optional[int]:
 
 
 def _parse_date(value: str) -> Optional[date]:
-    if value is None:
-        return None
     value = value.strip()
     if not value:
         return None

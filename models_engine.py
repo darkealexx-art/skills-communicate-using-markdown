@@ -110,7 +110,7 @@ def transformer_model(
 ) -> list[tuple[np.ndarray, float]]:
     window = (
         one_hot[-TRANSFORMER_WINDOW_SIZE:]
-        if len(one_hot)
+        if len(one_hot) > TRANSFORMER_WINDOW_SIZE
         else one_hot
     )
     if len(window) == 0:
@@ -231,7 +231,7 @@ def hot_cold_model(
     forbidden: set[tuple[int, ...]],
     window: int = HOT_COLD_WINDOW_SIZE,
 ) -> list[tuple[np.ndarray, float]]:
-    recent = draws[-window:] if len(draws) else draws
+    recent = draws[-window:] if len(draws) > window else draws
     recent_counts = _frequency_vector(recent)
     hot = normalize_weights(recent_counts)
     cold = normalize_weights(1.0 / (frequency + 1.0))
