@@ -28,6 +28,7 @@ def generate_consensus_sequences(
         top_indices = np.arange(56)
     else:
         top_indices = np.argsort(weights)[-20:]
+    choice_pool = top_indices + 1
     restricted_weights = normalize_weights(weights[top_indices])
     rng = np.random.default_rng(seed)
 
@@ -37,7 +38,7 @@ def generate_consensus_sequences(
     while len(sequences) < 10 and attempts < 5000:
         attempts += 1
         numbers = rng.choice(
-            top_indices + 1, size=6, replace=False, p=restricted_weights
+            choice_pool, size=6, replace=False, p=restricted_weights
         )
         numbers.sort()
         combo = tuple(numbers.tolist())
@@ -64,4 +65,3 @@ def generate_consensus_sequences(
         )
         seen.add(combo)
     return sequences
-

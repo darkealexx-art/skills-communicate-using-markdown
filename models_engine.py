@@ -309,9 +309,12 @@ def umap_model(
             continue
         cluster_freq = cluster_rows.mean(axis=0)
         top_indices = np.argsort(cluster_freq)[-12:]
-        weights = normalize_weights(cluster_freq[top_indices])
+        choice_pool = top_indices + 1
+        restricted_weights = normalize_weights(cluster_freq[top_indices])
         for _ in range(10):
-            numbers = rng.choice(top_indices + 1, size=6, replace=False, p=weights)
+            numbers = rng.choice(
+                choice_pool, size=6, replace=False, p=restricted_weights
+            )
             numbers.sort()
             combo = tuple(numbers.tolist())
             if combo in forbidden or combo in seen:
