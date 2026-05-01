@@ -19,6 +19,9 @@ TRANSFORMER_WINDOW_SIZE = 50
 HOT_COLD_WINDOW_SIZE = 100
 MONTECARLO_ITERATIONS = 1_000_000
 MAX_ATTEMPTS_MULTIPLIER = 500
+MIN_DEGREE_SUM = 1.0
+FITNESS_PENALTY_VALID = 1.0
+FITNESS_PENALTY_INVALID = 0.3
 
 
 def generate_all_models(
@@ -263,7 +266,9 @@ def gnn_model(
         torch.manual_seed(int(rng.integers(0, 1_000_000)))
         adj = torch.tensor(adjacency, dtype=torch.float32)
         adj = adj + torch.eye(56)
-        degree_inv = torch.diag(1.0 / torch.clamp(adj.sum(dim=1), min=1.0))
+        degree_inv = torch.diag(
+            1.0 / torch.clamp(adj.sum(dim=1), min=MIN_DEGREE_SUM)
+        )
         norm_adj = degree_inv @ adj
         features = torch.eye(56)
         weight = torch.randn(56, 16)
@@ -290,7 +295,11 @@ def umap_model(
     )
     embedding = reducer.fit_transform(one_hot)
     n_clusters = min(10, len(one_hot))
-    kmeans = KMeans(n_clusters=n_clusters, n_init=10, random_state=42)
+    kmeans = KMeans(
+        n_clusters=n_clusters,
+        n_init=10,
+        random_state=int(rng.integers(0, 1_000_000)),
+    )
     labels = kmeans.fit_predict(embedding)
     sequences: list[tuple[np.ndarray, float]] = []
     seen: set[tuple[int, ...]] = set()
@@ -454,7 +463,12 @@ def _random_population(
 def _fitness(population: np.ndarray, weights: np.ndarray) -> np.ndarray:
     scores = weights[population - 1].sum(axis=1)
     penalties = np.array(
-        [1.0 if passes_biometric_filters(row) else 0.3 for row in population]
+        [
+            FITNESS_PENALTY_VALID
+            if passes_biometric_filters(row)
+            else FITNESS_PENALTY_INVALID
+            for row in population
+        ]
     )
     return scores * penalties
 
