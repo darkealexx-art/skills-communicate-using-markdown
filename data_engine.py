@@ -28,7 +28,7 @@ def load_and_preprocess(file_paths: Sequence[str | Path]) -> np.ndarray:
     for path in file_paths:
         draws.extend(_load_draws_from_csv(Path(path)))
     if not draws:
-        raise ValueError("No se encontraron sorteos válidos en los CSVs.")
+        raise ValueError("No valid draws found in the CSV files.")
     draws_array = np.array(draws, dtype=np.int16)
     global HISTORIAL_PROHIBIDO
     HISTORIAL_PROHIBIDO = {tuple(draw.tolist()) for draw in draws_array}
@@ -70,7 +70,7 @@ def normalize_weights(weights: np.ndarray) -> np.ndarray:
 
 def _load_draws_from_csv(path: Path) -> list[Tuple[int, ...]]:
     if not path.exists():
-        raise FileNotFoundError(f"CSV no encontrado: {path}")
+        raise FileNotFoundError(f"CSV file not found: {path}")
     draws: list[Tuple[int, ...]] = []
     with path.open("r", encoding="utf-8-sig", newline="") as handle:
         reader = csv.reader(handle)

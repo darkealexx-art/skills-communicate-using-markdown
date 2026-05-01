@@ -19,7 +19,7 @@ TRANSFORMER_WINDOW_SIZE = 50
 HOT_COLD_WINDOW_SIZE = 100
 MONTECARLO_ITERATIONS = 1_000_000
 MAX_ATTEMPTS_MULTIPLIER = 500
-MIN_DEGREE_SUM = 1.0  # Evita división por cero en la normalización del grado.
+MIN_DEGREE_SUM = 1.0  # Avoid divide-by-zero in degree normalization.
 FITNESS_PENALTY_VALID = 1.0
 FITNESS_PENALTY_INVALID = 0.3
 MIN_ELITE_COUNT = 10
@@ -375,8 +375,11 @@ def _generate_sequences_from_weights(
     if extra_seen:
         seen.update(extra_seen)
     attempts = 0
+    last_success = 0
     while len(sequences) < count and attempts < count * MAX_ATTEMPTS_MULTIPLIER:
         attempts += 1
+        if attempts - last_success > MAX_ATTEMPTS_MULTIPLIER:
+            break
         numbers = rng.choice(NUMBERS, size=6, replace=False, p=weights)
         numbers.sort()
         combo = tuple(numbers.tolist())
@@ -387,6 +390,7 @@ def _generate_sequences_from_weights(
         score = float(weights[numbers - 1].sum())
         sequences.append((numbers, score))
         seen.add(combo)
+        last_success = attempts
     return sequences
 
 
