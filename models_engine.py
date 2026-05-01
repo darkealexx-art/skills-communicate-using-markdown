@@ -7,9 +7,18 @@ import torch
 from sklearn.cluster import KMeans
 import umap
 
-from data_engine import compute_biometrics, passes_biometric_filters, HISTORIAL_PROHIBIDO
+from data_engine import (
+    HISTORIAL_PROHIBIDO,
+    compute_biometrics,
+    normalize_weights,
+    passes_biometric_filters,
+)
 
 NUMBERS = np.arange(1, 57)
+TRANSFORMER_WINDOW_SIZE = 50
+HOT_COLD_WINDOW_SIZE = 100
+MONTECARLO_ITERATIONS = 1_000_000
+MAX_ATTEMPTS_MULTIPLIER = 500
 
 
 def generate_all_models(
@@ -99,7 +108,11 @@ def transformer_model(
     rng: np.random.Generator,
     forbidden: set[tuple[int, ...]],
 ) -> list[tuple[np.ndarray, float]]:
-    window = one_hot[-50:] if len(one_hot) else one_hot
+    window = (
+        one_hot[-TRANSFORMER_WINDOW_SIZE:]
+        if len(one_hot)
+        else one_hot
+    )
     if len(window) == 0:
         weights = np.full(56, 1 / 56)
     else:
@@ -140,16 +153,16 @@ def montecarlo_model(
     frequency: np.ndarray,
     rng: np.random.Generator,
     forbidden: set[tuple[int, ...]],
-    iterations: int = 1_000_000,
+    iterations: int = MONTECARLO_ITERATIONS,
 ) -> list[tuple[np.ndarray, float]]:
-    weights = _normalize_weights(frequency)
+    weights = normalize_weights(frequency)
     candidates: list[tuple[np.ndarray, float]] = []
     seen: set[tuple[int, ...]] = set()
     chunk = 10_000
     for start in range(0, iterations, chunk):
         size = min(chunk, iterations - start)
         random_matrix = rng.random((size, 56))
-        idx = np.argpartition(random_matrix, 6, axis=1)[:, :6]
+        idx = np.argsort(random_matrix, axis=1)[:, :6]
         numbers = np.sort(idx + 1, axis=1)
         scores = weights[idx].sum(axis=1)
         order = np.argsort(scores)[::-1]
@@ -182,7 +195,7 @@ def shannon_entropy_model(
     forbidden: set[tuple[int, ...]],
 ) -> list[tuple[np.ndarray, float]]:
     weights = 1.0 / (frequency + 1.0)
-    weights = _normalize_weights(weights)
+    weights = normalize_weights(weights)
     return _generate_sequences_from_weights(weights, 10, rng, forbidden)
 
 
@@ -198,7 +211,7 @@ def graph_centrality_model(
         eigenvalues, eigenvectors = np.linalg.eig(adjacency)
         principal = eigenvectors[:, np.argmax(np.real(eigenvalues))]
         weights = np.abs(np.real(principal))
-        weights = _normalize_weights(weights)
+        weights = normalize_weights(weights)
     return _generate_sequences_from_weights(weights, 10, rng, forbidden)
 
 
@@ -207,7 +220,7 @@ def genetic_algorithm_model(
     rng: np.random.Generator,
     forbidden: set[tuple[int, ...]],
 ) -> list[tuple[np.ndarray, float]]:
-    weights = _normalize_weights(frequency)
+    weights = normalize_weights(frequency)
     return _genetic_algorithm(weights, rng, forbidden)
 
 
@@ -216,13 +229,13 @@ def hot_cold_model(
     frequency: np.ndarray,
     rng: np.random.Generator,
     forbidden: set[tuple[int, ...]],
-    window: int = 100,
+    window: int = HOT_COLD_WINDOW_SIZE,
 ) -> list[tuple[np.ndarray, float]]:
     recent = draws[-window:] if len(draws) else draws
     recent_counts = _frequency_vector(recent)
-    hot = _normalize_weights(recent_counts)
-    cold = _normalize_weights(1.0 / (frequency + 1.0))
-    weights = _normalize_weights(0.6 * hot + 0.4 * cold)
+    hot = normalize_weights(recent_counts)
+    cold = normalize_weights(1.0 / (frequency + 1.0))
+    weights = normalize_weights(0.6 * hot + 0.4 * cold)
     return _generate_sequences_from_weights(weights, 10, rng, forbidden)
 
 
@@ -234,7 +247,7 @@ def mean_reversion_model(
 ) -> list[tuple[np.ndarray, float]]:
     expected = (len(draws) * 6) / 56 if len(draws) else 1.0
     deviation = expected - frequency
-    weights = _normalize_weights(np.clip(deviation, 0, None))
+    weights = normalize_weights(np.clip(deviation, 0, None))
     return _generate_sequences_from_weights(weights, 10, rng, forbidden)
 
 
@@ -267,7 +280,7 @@ def umap_model(
     forbidden: set[tuple[int, ...]],
 ) -> list[tuple[np.ndarray, float]]:
     if len(one_hot) < 5:
-        weights = _normalize_weights(frequency)
+        weights = normalize_weights(frequency)
         return _generate_sequences_from_weights(weights, 10, rng, forbidden)
     reducer = umap.UMAP(
         n_neighbors=15,
@@ -287,7 +300,7 @@ def umap_model(
             continue
         cluster_freq = cluster_rows.mean(axis=0)
         top_indices = np.argsort(cluster_freq)[-12:]
-        weights = _normalize_weights(cluster_freq[top_indices])
+        weights = normalize_weights(cluster_freq[top_indices])
         for _ in range(10):
             numbers = rng.choice(top_indices + 1, size=6, replace=False, p=weights)
             numbers.sort()
@@ -302,7 +315,7 @@ def umap_model(
             if len(sequences) >= 10:
                 return sequences
     if len(sequences) < 10:
-        weights = _normalize_weights(frequency)
+        weights = normalize_weights(frequency)
         sequences.extend(
             _generate_sequences_from_weights(
                 weights, 10 - len(sequences), rng, forbidden, seen
@@ -342,13 +355,13 @@ def _generate_sequences_from_weights(
     forbidden: set[tuple[int, ...]],
     extra_seen: set[tuple[int, ...]] | None = None,
 ) -> list[tuple[np.ndarray, float]]:
-    weights = _normalize_weights(weights)
+    weights = normalize_weights(weights)
     sequences: list[tuple[np.ndarray, float]] = []
     seen: set[tuple[int, ...]] = set()
     if extra_seen:
         seen.update(extra_seen)
     attempts = 0
-    while len(sequences) < count and attempts < count * 500:
+    while len(sequences) < count and attempts < count * MAX_ATTEMPTS_MULTIPLIER:
         attempts += 1
         numbers = rng.choice(NUMBERS, size=6, replace=False, p=weights)
         numbers.sort()
@@ -377,15 +390,6 @@ def _one_hot_draws(draws: np.ndarray) -> np.ndarray:
     rows = np.arange(len(draws))[:, None]
     one_hot[rows, draws - 1] = 1.0
     return one_hot
-
-
-def _normalize_weights(weights: np.ndarray) -> np.ndarray:
-    weights = np.nan_to_num(weights, nan=0.0, posinf=0.0, neginf=0.0)
-    weights = np.clip(weights, 0.0, None)
-    total = float(weights.sum())
-    if total <= 0:
-        return np.full_like(weights, 1 / len(weights))
-    return weights / total
 
 
 def _cooccurrence_matrix(draws: np.ndarray) -> np.ndarray:

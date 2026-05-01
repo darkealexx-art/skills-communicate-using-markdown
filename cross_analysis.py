@@ -4,7 +4,12 @@ from typing import Iterable
 
 import numpy as np
 
-from data_engine import compute_biometrics, passes_biometric_filters, HISTORIAL_PROHIBIDO
+from data_engine import (
+    HISTORIAL_PROHIBIDO,
+    compute_biometrics,
+    normalize_weights,
+    passes_biometric_filters,
+)
 
 
 def generate_consensus_sequences(
@@ -18,12 +23,12 @@ def generate_consensus_sequences(
     for result in model_results:
         numbers = np.array([result[f"N{i}"] for i in range(1, 7)], dtype=int)
         counts[numbers - 1] += 1
-    weights = _normalize_weights(counts)
+    weights = normalize_weights(counts)
     if np.all(counts == 0):
         top_indices = np.arange(56)
     else:
         top_indices = np.argsort(weights)[-20:]
-    restricted_weights = _normalize_weights(weights[top_indices])
+    restricted_weights = normalize_weights(weights[top_indices])
     rng = np.random.default_rng(seed)
 
     sequences = []
@@ -60,11 +65,3 @@ def generate_consensus_sequences(
         seen.add(combo)
     return sequences
 
-
-def _normalize_weights(weights: np.ndarray) -> np.ndarray:
-    weights = np.nan_to_num(weights, nan=0.0, posinf=0.0, neginf=0.0)
-    weights = np.clip(weights, 0.0, None)
-    total = float(weights.sum())
-    if total <= 0:
-        return np.full_like(weights, 1 / len(weights))
-    return weights / total

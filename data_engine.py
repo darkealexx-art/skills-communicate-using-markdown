@@ -12,6 +12,9 @@ import numpy as np
 MIN_NUMBER = 1
 MAX_NUMBER = 56
 ERA_START = date(2007, 12, 1)
+MIN_VALID_SUM = 120
+MAX_VALID_SUM = 210
+MIN_AVG_GAP = 5.4
 
 HISTORIAL_PROHIBIDO: set[Tuple[int, ...]] = set()
 
@@ -45,15 +48,24 @@ def compute_biometrics(numbers: Sequence[int]) -> Tuple[int, str, int, float]:
 
 def passes_biometric_filters(numbers: Sequence[int]) -> bool:
     total_sum, parity, max_consecutive, avg_gap = compute_biometrics(numbers)
-    if not 120 <= total_sum <= 210:
+    if not MIN_VALID_SUM <= total_sum <= MAX_VALID_SUM:
         return False
     if parity not in {"3:3", "4:2", "2:4"}:
         return False
     if max_consecutive > 2:
         return False
-    if avg_gap <= 5.4:
+    if avg_gap <= MIN_AVG_GAP:
         return False
     return True
+
+
+def normalize_weights(weights: np.ndarray) -> np.ndarray:
+    weights = np.nan_to_num(weights, nan=0.0, posinf=0.0, neginf=0.0)
+    weights = np.clip(weights, 0.0, None)
+    total = float(weights.sum())
+    if total <= 0:
+        return np.full_like(weights, 1 / len(weights))
+    return weights / total
 
 
 def _load_draws_from_csv(path: Path) -> list[Tuple[int, ...]]:
