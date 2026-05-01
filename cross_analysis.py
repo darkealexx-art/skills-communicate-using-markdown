@@ -11,6 +11,10 @@ from data_engine import (
     passes_biometric_filters,
 )
 
+CONSENSUS_POOL_SIZE = 20
+CONSENSUS_TARGET = 10
+CONSENSUS_MAX_ATTEMPTS = 5000
+
 
 def generate_consensus_sequences(
     model_results: Iterable[dict],
@@ -25,9 +29,9 @@ def generate_consensus_sequences(
         counts[numbers - 1] += 1
     weights = normalize_weights(counts)
     if np.all(counts == 0):
-        top_indices = np.arange(56)
+        top_indices = np.arange(len(weights))
     else:
-        top_indices = np.argsort(weights)[-20:]
+        top_indices = np.argsort(weights)[-CONSENSUS_POOL_SIZE:]
     choice_pool = top_indices + 1
     restricted_weights = normalize_weights(weights[top_indices])
     rng = np.random.default_rng(seed)
@@ -35,7 +39,7 @@ def generate_consensus_sequences(
     sequences = []
     seen: set[tuple[int, ...]] = set()
     attempts = 0
-    while len(sequences) < 10 and attempts < 5000:
+    while len(sequences) < CONSENSUS_TARGET and attempts < CONSENSUS_MAX_ATTEMPTS:
         attempts += 1
         numbers = rng.choice(
             choice_pool, size=6, replace=False, p=restricted_weights
