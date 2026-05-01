@@ -19,9 +19,11 @@ TRANSFORMER_WINDOW_SIZE = 50
 HOT_COLD_WINDOW_SIZE = 100
 MONTECARLO_ITERATIONS = 1_000_000
 MAX_ATTEMPTS_MULTIPLIER = 500
-MIN_DEGREE_SUM = 1.0
+MIN_DEGREE_SUM = 1.0  # Evita división por cero en la normalización del grado.
 FITNESS_PENALTY_VALID = 1.0
 FITNESS_PENALTY_INVALID = 0.3
+MIN_ELITE_COUNT = 10
+ELITE_FRACTION = 0.3
 
 
 def generate_all_models(
@@ -161,9 +163,9 @@ def montecarlo_model(
     weights = normalize_weights(frequency)
     candidates: list[tuple[np.ndarray, float]] = []
     seen: set[tuple[int, ...]] = set()
-    chunk = 10_000
-    for start in range(0, iterations, chunk):
-        size = min(chunk, iterations - start)
+    chunk_size = 10_000
+    for start in range(0, iterations, chunk_size):
+        size = min(chunk_size, iterations - start)
         random_matrix = rng.random((size, 56))
         idx = np.argsort(random_matrix, axis=1)[:, :6]
         numbers = np.sort(idx + 1, axis=1)
@@ -424,7 +426,7 @@ def _genetic_algorithm(
     population = _random_population(population_size, rng, weights)
     for _ in range(generations):
         fitness = _fitness(population, weights)
-        elite_count = max(10, int(population_size * 0.3))
+        elite_count = max(MIN_ELITE_COUNT, int(population_size * ELITE_FRACTION))
         elite_idx = np.argsort(fitness)[-elite_count:]
         elites = population[elite_idx]
         children = []
