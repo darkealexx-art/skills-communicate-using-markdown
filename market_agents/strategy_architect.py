@@ -33,6 +33,12 @@ class StrategyArchitect(MarketAgent):
         opportunities = data["integrated_inputs"]["opportunities"]
         risks = data["integrated_inputs"]["risks"]
 
+        sentiment_deep_analysis = sentiment.get("deep_analysis", {})
+        sentiment_metrics = sentiment_deep_analysis.get("metrics", {})
+        average_sentiment = sentiment_metrics.get("average_sentiment", 0.0)
+        if not isinstance(average_sentiment, (int, float)):
+            average_sentiment = 0.0
+
         risk_deep_analysis = risks.get("deep_analysis", {})
         critical_risks_list = risk_deep_analysis.get("critical_risks", [])
         if not isinstance(critical_risks_list, list):
@@ -44,7 +50,7 @@ class StrategyArchitect(MarketAgent):
         )
         base_risk_budget = (
             self.TACTICAL_BUDGET_POSITIVE_SENTIMENT
-            if sentiment["deep_analysis"]["metrics"]["average_sentiment"] > 0
+            if average_sentiment > 0
             else self.TACTICAL_BUDGET_NON_POSITIVE_SENTIMENT
         )
         tactical_budget = round(max(base_risk_budget - risk_penalty, self.MIN_TACTICAL_BUDGET), 2)

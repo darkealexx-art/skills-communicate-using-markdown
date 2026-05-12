@@ -13,7 +13,7 @@ class OpportunityExplorer(MarketAgent):
     VALUATION_WEIGHT = 0.45
     MOMENTUM_WEIGHT = 0.45
     VOLATILITY_SCALE = 10
-    VOLATILITY_WEIGHT = 0.10
+    VOLATILITY_PENALTY_WEIGHT = 0.10
 
     def __init__(self) -> None:
         super().__init__(
@@ -38,11 +38,12 @@ class OpportunityExplorer(MarketAgent):
 
     def analyze(self, data: dict[str, Any]) -> dict[str, Any]:
         frame = pd.DataFrame(data["opportunities"])
-        frame["composite_score"] = (
+        positive_component = (
             (frame["valuation_gap_pct"] * self.VALUATION_WEIGHT)
             + (frame["momentum_score"] * self.MOMENTUM_WEIGHT)
-            - (frame["volatility"] * self.VOLATILITY_SCALE * self.VOLATILITY_WEIGHT)
         )
+        volatility_penalty = frame["volatility"] * self.VOLATILITY_SCALE * self.VOLATILITY_PENALTY_WEIGHT
+        frame["composite_score"] = positive_component - volatility_penalty
         ranked = frame.sort_values(by="composite_score", ascending=False).reset_index(drop=True)
         short_term = ranked.head(2)["asset"].tolist()
         long_term = ranked.head(3)["asset"].tolist()
