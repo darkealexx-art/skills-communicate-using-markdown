@@ -8,6 +8,12 @@ from .base import MarketAgent
 class StrategyArchitect(MarketAgent):
     """Integra hallazgos y propone estrategia sostenible."""
 
+    RISK_PENALTY_PER_CRITICAL = 0.07
+    MAX_RISK_PENALTY = 0.21
+    TACTICAL_BUDGET_POSITIVE_SENTIMENT = 0.45
+    TACTICAL_BUDGET_NON_POSITIVE_SENTIMENT = 0.35
+    MIN_TACTICAL_BUDGET = 0.20
+
     def __init__(self) -> None:
         super().__init__(
             name="Arquitecto de Estrategia",
@@ -27,9 +33,16 @@ class StrategyArchitect(MarketAgent):
         opportunities = data["integrated_inputs"]["opportunities"]
         risks = data["integrated_inputs"]["risks"]
 
-        risk_penalty = min(len(risks["deep_analysis"]["critical_risks"]) * 0.07, 0.21)
-        base_risk_budget = 0.45 if sentiment["deep_analysis"]["metrics"]["average_sentiment"] > 0 else 0.35
-        tactical_budget = round(max(base_risk_budget - risk_penalty, 0.20), 2)
+        risk_penalty = min(
+            len(risks["deep_analysis"]["critical_risks"]) * self.RISK_PENALTY_PER_CRITICAL,
+            self.MAX_RISK_PENALTY,
+        )
+        base_risk_budget = (
+            self.TACTICAL_BUDGET_POSITIVE_SENTIMENT
+            if sentiment["deep_analysis"]["metrics"]["average_sentiment"] > 0
+            else self.TACTICAL_BUDGET_NON_POSITIVE_SENTIMENT
+        )
+        tactical_budget = round(max(base_risk_budget - risk_penalty, self.MIN_TACTICAL_BUDGET), 2)
         defensive_budget = round(1.0 - tactical_budget, 2)
         short_term_assets = opportunities["deep_analysis"]["top_short_term"]
         critical_risks = risks["deep_analysis"]["critical_risks"]

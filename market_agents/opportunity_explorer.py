@@ -10,6 +10,11 @@ from .base import MarketAgent
 class OpportunityExplorer(MarketAgent):
     """Detecta oportunidades y nichos emergentes."""
 
+    VALUATION_WEIGHT = 0.45
+    MOMENTUM_WEIGHT = 0.45
+    VOLATILITY_SCALE = 10
+    VOLATILITY_WEIGHT = 0.10
+
     def __init__(self) -> None:
         super().__init__(
             name="Explorador de Oportunidades",
@@ -33,7 +38,11 @@ class OpportunityExplorer(MarketAgent):
 
     def analyze(self, data: dict[str, Any]) -> dict[str, Any]:
         frame = pd.DataFrame(data["opportunities"])
-        frame["composite_score"] = (frame["valuation_gap_pct"] * 0.45) + (frame["momentum_score"] * 0.45) - (frame["volatility"] * 10 * 0.10)
+        frame["composite_score"] = (
+            (frame["valuation_gap_pct"] * self.VALUATION_WEIGHT)
+            + (frame["momentum_score"] * self.MOMENTUM_WEIGHT)
+            - (frame["volatility"] * self.VOLATILITY_SCALE * self.VOLATILITY_WEIGHT)
+        )
         ranked = frame.sort_values(by="composite_score", ascending=False).reset_index(drop=True)
         short_term = ranked.head(2)["asset"].tolist()
         long_term = ranked.head(3)["asset"].tolist()

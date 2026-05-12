@@ -3,12 +3,15 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from datetime import datetime, timezone
 from typing import Any
+from urllib.parse import urlparse
 
 import requests
 
 
 class MarketAgent(ABC):
     """Contrato base para agentes especializados."""
+
+    REQUEST_TIMEOUT_SECONDS = 5
 
     def __init__(self, name: str, role: str, sources: list[dict[str, str]]) -> None:
         self.name = name
@@ -32,8 +35,20 @@ class MarketAgent(ABC):
         for source in self.sources:
             url = source["url"]
             status = "available"
+            parsed = urlparse(url)
+            if parsed.scheme == "internal":
+                checked_sources.append(
+                    {
+                        "name": source["name"],
+                        "url": url,
+                        "type": source["type"],
+                        "status": "internal",
+                        "checked_at_utc": datetime.now(timezone.utc).isoformat(),
+                    }
+                )
+                continue
             try:
-                response = requests.get(url, timeout=5)
+                response = requests.get(url, timeout=self.REQUEST_TIMEOUT_SECONDS)
                 response.raise_for_status()
             except requests.RequestException:
                 status = "unreachable"
