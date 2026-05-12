@@ -10,6 +10,9 @@ def run_markdown_example() -> None:
     result = orchestrator.run()
     print("Reporte Markdown generado en:", result["markdown_report_path"])
     print("Reporte JSON generado en:", result["json_report_path"])
+    for agent_key, paths in result["agent_reports"].items():
+        print(f"Reporte detallado ({agent_key}) Markdown:", paths["markdown_report_path"])
+        print(f"Reporte detallado ({agent_key}) JSON:", paths["json_report_path"])
 
 
 def run_json_example() -> None:

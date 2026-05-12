@@ -46,6 +46,36 @@ class MarketAnalysisOrchestrator:
 
         timestamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
         run_suffix = uuid4().hex[:8]
+        agent_reports = {
+            "sentiment_analyst": self._write_agent_report(
+                "sentiment_analyst",
+                self.sentiment_agent.name,
+                sentiment_report,
+                timestamp,
+                run_suffix,
+            ),
+            "opportunity_explorer": self._write_agent_report(
+                "opportunity_explorer",
+                self.opportunity_agent.name,
+                opportunity_report,
+                timestamp,
+                run_suffix,
+            ),
+            "risk_guardian": self._write_agent_report(
+                "risk_guardian",
+                self.risk_agent.name,
+                risk_report,
+                timestamp,
+                run_suffix,
+            ),
+            "strategy_architect": self._write_agent_report(
+                "strategy_architect",
+                self.strategy_agent.name,
+                strategy_report,
+                timestamp,
+                run_suffix,
+            ),
+        }
         combined = {
             "generated_at_utc": timestamp,
             "agents": {
@@ -65,9 +95,25 @@ class MarketAnalysisOrchestrator:
         return {
             "json_report_path": str(json_path),
             "markdown_report_path": str(md_path),
+            "agent_reports": agent_reports,
             "combined_report": combined,
             "markdown_content": markdown_report,
         }
+
+    def _write_agent_report(
+        self,
+        agent_key: str,
+        agent_name: str,
+        report: dict[str, Any],
+        timestamp: str,
+        run_suffix: str,
+    ) -> dict[str, str]:
+        detailed_markdown = f"# Informe Detallado: {agent_name}\n\n{report['markdown']}"
+        json_path = self.output_dir / f"{agent_key}_report_{timestamp}_{run_suffix}.json"
+        md_path = self.output_dir / f"{agent_key}_report_{timestamp}_{run_suffix}.md"
+        json_path.write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
+        md_path.write_text(detailed_markdown, encoding="utf-8")
+        return {"json_report_path": str(json_path), "markdown_report_path": str(md_path)}
 
     @staticmethod
     def _compose_markdown(report_data: dict[str, Any]) -> str:
