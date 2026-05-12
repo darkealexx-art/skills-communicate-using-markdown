@@ -33,7 +33,7 @@ class SentimentAnalyst(MarketAgent):
             {"source": "Reuters Markets", "headline": "Rally en tecnología por expectativas de recorte de tasas", "sentiment_score": 0.72},
             {"source": "Bloomberg Markets", "headline": "Mayor cautela en energía por tensiones geopolíticas", "sentiment_score": -0.28},
             {"source": "OECD Economic Outlook", "headline": "Crecimiento estable con inflación desacelerando", "sentiment_score": 0.20},
-            {"source": "Reuters Markets", "headline": "Fondos aumentan exposición a activos de riesgo", "sentiment_score": 0.55},
+            {"source": "Bloomberg Markets", "headline": "Fondos aumentan exposición a activos de riesgo", "sentiment_score": 0.55},
             {"source": "Bloomberg Markets", "headline": "Bonos soberanos muestran toma de utilidades", "sentiment_score": -0.12},
         ]
         return {"signals": signals, "sources": source_checks}

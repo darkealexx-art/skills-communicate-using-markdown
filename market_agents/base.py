@@ -48,7 +48,11 @@ class MarketAgent(ABC):
                 )
                 continue
             try:
-                response = requests.get(url, timeout=self.REQUEST_TIMEOUT_SECONDS)
+                response = requests.get(
+                    url,
+                    timeout=self.REQUEST_TIMEOUT_SECONDS,
+                    headers={"User-Agent": "MarketAgent/1.0"},
+                )
                 response.raise_for_status()
             except requests.RequestException:
                 status = "unreachable"

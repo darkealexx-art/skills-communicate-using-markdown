@@ -33,8 +33,13 @@ class StrategyArchitect(MarketAgent):
         opportunities = data["integrated_inputs"]["opportunities"]
         risks = data["integrated_inputs"]["risks"]
 
+        risk_deep_analysis = risks.get("deep_analysis", {})
+        critical_risks_list = risk_deep_analysis.get("critical_risks", [])
+        if not isinstance(critical_risks_list, list):
+            critical_risks_list = []
+
         risk_penalty = min(
-            len(risks["deep_analysis"]["critical_risks"]) * self.RISK_PENALTY_PER_CRITICAL,
+            len(critical_risks_list) * self.RISK_PENALTY_PER_CRITICAL,
             self.MAX_RISK_PENALTY,
         )
         base_risk_budget = (
@@ -45,7 +50,7 @@ class StrategyArchitect(MarketAgent):
         tactical_budget = round(max(base_risk_budget - risk_penalty, self.MIN_TACTICAL_BUDGET), 2)
         defensive_budget = round(1.0 - tactical_budget, 2)
         short_term_assets = opportunities["deep_analysis"]["top_short_term"]
-        critical_risks = risks["deep_analysis"]["critical_risks"]
+        critical_risks = critical_risks_list
         critical_risk_text = ", ".join(critical_risks) if critical_risks else "sin riesgos críticos actuales"
 
         recommendations = [

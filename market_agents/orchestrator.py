@@ -43,7 +43,7 @@ class MarketAnalysisOrchestrator:
             self.strategy_agent.analyze(self.strategy_agent.fetch_data(strategy_inputs))
         )
 
-        timestamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+        timestamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%fZ")
         combined = {
             "generated_at_utc": timestamp,
             "agents": {
