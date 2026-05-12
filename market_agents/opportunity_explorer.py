@@ -54,6 +54,8 @@ class OpportunityExplorer(MarketAgent):
         )
         deep_analysis = {
             "table": analysis["opportunities_table"].to_dict(orient="records"),
+            "top_short_term": analysis["top_short_term"],
+            "top_long_term": analysis["top_long_term"],
             "scenario_short_term": analysis["scenario_short_term"],
             "scenario_long_term": analysis["scenario_long_term"],
             "sources": analysis["sources"],

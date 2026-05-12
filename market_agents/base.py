@@ -33,7 +33,8 @@ class MarketAgent(ABC):
             url = source["url"]
             status = "available"
             try:
-                requests.get(url, timeout=5)
+                response = requests.get(url, timeout=5)
+                response.raise_for_status()
             except requests.RequestException:
                 status = "unreachable"
 

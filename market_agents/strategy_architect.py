@@ -31,12 +31,15 @@ class StrategyArchitect(MarketAgent):
         base_risk_budget = 0.45 if sentiment["deep_analysis"]["metrics"]["average_sentiment"] > 0 else 0.35
         tactical_budget = round(max(base_risk_budget - risk_penalty, 0.20), 2)
         defensive_budget = round(1.0 - tactical_budget, 2)
+        short_term_assets = opportunities["deep_analysis"]["top_short_term"]
+        critical_risks = risks["deep_analysis"]["critical_risks"]
+        critical_risk_text = ", ".join(critical_risks) if critical_risks else "sin riesgos críticos actuales"
 
         recommendations = [
             f"Asignar {int(tactical_budget * 100)}% a oportunidades de mayor score en corto plazo: "
-            f"{', '.join(opportunities['deep_analysis']['scenario_short_term'].split(': ')[1].rstrip('.').split(', '))}.",
+            f"{', '.join(short_term_assets)}.",
             f"Reservar {int(defensive_budget * 100)}% en activos defensivos por riesgos críticos: "
-            f"{', '.join(risks['deep_analysis']['critical_risks']) if risks['deep_analysis']['critical_risks'] else 'sin riesgos críticos actuales'}.",
+            f"{critical_risk_text}.",
             "Rebalancear mensualmente y recalibrar la cartera ante eventos regulatorios y geopolíticos relevantes.",
         ]
         scenarios = {
