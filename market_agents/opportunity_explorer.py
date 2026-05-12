@@ -58,12 +58,13 @@ class OpportunityExplorer(MarketAgent):
             "scenario_long_term": analysis["scenario_long_term"],
             "sources": analysis["sources"],
         }
+        table_markdown = self._to_markdown(analysis["opportunities_table"])
         markdown = (
             "## 2) Explorador de Oportunidades\n\n"
             "### Resumen Ejecutivo\n"
             f"{summary}\n\n"
             "### Análisis Profundo\n"
-            f"{analysis['opportunities_table'].to_markdown(index=False)}\n\n"
+            f"{table_markdown}\n\n"
             f"- Escenario corto plazo: {analysis['scenario_short_term']}\n"
             f"- Escenario largo plazo: {analysis['scenario_long_term']}\n\n"
             "### Fuentes Consultadas\n"
@@ -71,3 +72,15 @@ class OpportunityExplorer(MarketAgent):
             + "\n"
         )
         return {"executive_summary": summary, "deep_analysis": deep_analysis, "markdown": markdown}
+
+    @staticmethod
+    def _to_markdown(frame: pd.DataFrame) -> str:
+        headers = [str(col) for col in frame.columns]
+        separator = ["---"] * len(headers)
+        rows = frame.astype(str).values.tolist()
+        lines = [
+            "| " + " | ".join(headers) + " |",
+            "| " + " | ".join(separator) + " |",
+        ]
+        lines.extend("| " + " | ".join(row) + " |" for row in rows)
+        return "\n".join(lines)

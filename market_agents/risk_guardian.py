@@ -55,14 +55,27 @@ class RiskGuardian(MarketAgent):
             "critical_risks": analysis["critical_risks"],
             "sources": analysis["sources"],
         }
+        table_markdown = self._to_markdown(analysis["risk_table"])
         markdown = (
             "## 3) Guardia de Riesgos\n\n"
             "### Resumen Ejecutivo\n"
             f"{summary}\n\n"
             "### Análisis Profundo\n"
-            f"{analysis['risk_table'].to_markdown(index=False)}\n\n"
+            f"{table_markdown}\n\n"
             "### Fuentes Consultadas\n"
             + "\n".join([f"- {s['name']} ({s['type']}): {s['url']} [estado: {s['status']}]" for s in analysis["sources"]])
             + "\n"
         )
         return {"executive_summary": summary, "deep_analysis": deep_analysis, "markdown": markdown}
+
+    @staticmethod
+    def _to_markdown(frame: pd.DataFrame) -> str:
+        headers = [str(col) for col in frame.columns]
+        separator = ["---"] * len(headers)
+        rows = frame.astype(str).values.tolist()
+        lines = [
+            "| " + " | ".join(headers) + " |",
+            "| " + " | ".join(separator) + " |",
+        ]
+        lines.extend("| " + " | ".join(row) + " |" for row in rows)
+        return "\n".join(lines)
