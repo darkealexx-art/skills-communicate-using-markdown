@@ -4,6 +4,7 @@ import json
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
+from uuid import uuid4
 
 from .opportunity_explorer import OpportunityExplorer
 from .risk_guardian import RiskGuardian
@@ -43,7 +44,8 @@ class MarketAnalysisOrchestrator:
             self.strategy_agent.analyze(self.strategy_agent.fetch_data(strategy_inputs))
         )
 
-        timestamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%fZ")
+        timestamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+        run_suffix = uuid4().hex[:8]
         combined = {
             "generated_at_utc": timestamp,
             "agents": {
@@ -55,8 +57,8 @@ class MarketAnalysisOrchestrator:
         }
         markdown_report = self._compose_markdown(combined)
 
-        json_path = self.output_dir / f"market_report_{timestamp}.json"
-        md_path = self.output_dir / f"market_report_{timestamp}.md"
+        json_path = self.output_dir / f"market_report_{timestamp}_{run_suffix}.json"
+        md_path = self.output_dir / f"market_report_{timestamp}_{run_suffix}.md"
         json_path.write_text(json.dumps(combined, ensure_ascii=False, indent=2), encoding="utf-8")
         md_path.write_text(markdown_report, encoding="utf-8")
 

@@ -50,8 +50,7 @@ class StrategyArchitect(MarketAgent):
         tactical_budget = round(max(base_risk_budget - risk_penalty, self.MIN_TACTICAL_BUDGET), 2)
         defensive_budget = round(1.0 - tactical_budget, 2)
         short_term_assets = opportunities["deep_analysis"]["top_short_term"]
-        critical_risks = critical_risks_list
-        critical_risk_text = ", ".join(critical_risks) if critical_risks else "sin riesgos críticos actuales"
+        critical_risk_text = ", ".join(critical_risks_list) if critical_risks_list else "sin riesgos críticos actuales"
 
         recommendations = [
             f"Asignar {int(tactical_budget * 100)}% a oportunidades de mayor score en corto plazo: "
